@@ -51,3 +51,19 @@ export interface Page<T> {
   total?: number;
   has_more?: boolean;
 }
+
+interface ChangeBase {
+  seq: number;
+  at: string; // ISO 8601, UTC
+}
+
+export type Change =
+  | (ChangeBase & { type: "request.created" | "request.updated"; request: HelpdeskRequest })
+  | (ChangeBase & { type: "event.created"; request_id: number; event: RequestEvent })
+  | (ChangeBase & { type: "staff.updated"; staff: Staff });
+
+export interface ChangesPage {
+  data: Change[];
+  next_cursor: string;
+  has_more: boolean;
+}

@@ -18,8 +18,16 @@ export function toApiDate(isoDate: string): string {
 }
 
 /** The YYYY-MM-DD date of an instant in a given IANA timezone. */
+const dateFormats = new Map<string, Intl.DateTimeFormat>();
+
 export function localDate(instant: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(instant);
+  // Formatters are expensive to build and this runs for every row on every filter change.
+  let format = dateFormats.get(timeZone);
+  if (!format) {
+    format = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
+    dateFormats.set(timeZone, format);
+  }
+  const parts = format.formatToParts(instant);
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   return `${get("year")}-${get("month")}-${get("day")}`;
 }

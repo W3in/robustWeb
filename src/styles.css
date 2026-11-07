@@ -50,3 +50,10 @@ label.inline { display: inline-flex; gap: 6px; align-items: center; }
 .timeline time { color: var(--muted); font-size: 0.875rem; }
 .note { font-style: italic; }
 .error { padding: 8px 12px; border: 1px solid var(--danger); background: var(--danger-bg); border-radius: 4px; }
+
+.page-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; }
+.live { margin: 0 0 12px; color: var(--muted); font-size: 0.875rem; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #9aa5b1; }
+.dot-live { background: #16a34a; }
+.dot-catching-up { background: #d97706; }
+.dot-retrying { background: var(--danger); }
