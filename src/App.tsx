@@ -9,6 +9,7 @@ import { useSelectedRequest } from "./hooks/useSelectedRequest";
 import { useUrlFilters } from "./hooks/useUrlFilters";
 import { selectRows } from "./lib/board";
 import type { Digest } from "./lib/changes";
+import { csvFilename, downloadCsv, toCsv } from "./lib/csv";
 import { addDays } from "./lib/dates";
 import { buildStaffDirectory } from "./lib/rules";
 import { addAlias, type NameAliases } from "./lib/timeline";
@@ -86,6 +87,14 @@ function Board() {
           {data.state === "loading" && "Loading requests…"}
           {data.state === "ready" && `${rows.length} request${rows.length === 1 ? "" : "s"}`}
         </p>
+        {/* Exports every matching row (not just the ones rendered so far), in the board's sort order. */}
+        <button
+          type="button"
+          disabled={data.state !== "ready" || rows.length === 0}
+          onClick={() => downloadCsv(toCsv(rows, staffById), csvFilename(filters))}
+        >
+          Download CSV{data.state === "ready" ? ` (${rows.length} rows)` : ""}
+        </button>
       </div>
 
       {data.state === "loading" && (
