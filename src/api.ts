@@ -1,7 +1,7 @@
 // A thin client for the helpdesk API. Components never call fetch directly; they go through here.
 
 import { addDays, toApiDate } from "./lib/dates";
-import type { HelpdeskRequest, Page, RequestEvent, Site, Staff } from "./types";
+import type { ChangesPage, HelpdeskRequest, Page, RequestEvent, Site, Staff } from "./types";
 
 const BASE = (import.meta.env.HELPDESK_URL ?? "").replace(/\/$/, "");
 const TOKEN = import.meta.env.HELPDESK_TOKEN ?? "";
@@ -99,6 +99,10 @@ export async function listAllEvents(id: number, signal?: AbortSignal): Promise<R
 export const listSites = (signal?: AbortSignal) => get<{ data: Site[] }>("/v1/sites", {}, signal);
 
 export const listStaff = (signal?: AbortSignal) => get<{ data: Staff[] }>("/v1/staff", {}, signal);
+
+/** The change feed. Omit the cursor to start from the beginning; an expired cursor is a 410. */
+export const listChanges = (cursor: string | undefined, signal?: AbortSignal) =>
+  get<ChangesPage>("/v1/changes", { cursor, limit: 500 }, signal);
 
 export function describeError(error: unknown): string {
   if (error instanceof ApiError) return `${error.status}: ${error.message}`;
