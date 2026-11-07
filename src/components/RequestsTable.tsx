@@ -58,8 +58,10 @@ export function RequestsTable({ rows, staff, sort, onOpen }: Props) {
                 <td data-label="Assignee">{staffName(staff, request.assignee?.id)}</td>
                 <td data-label="Created">{formatInstant(new Date(request.created_at), timeZone)}</td>
                 <td data-label="Due">
-                  {request.due_on ? formatLocalDate(request.due_on) : "—"}
-                  {overdue && <span className="badge-overdue">Overdue</span>}
+                  <span>
+                    {request.due_on ? formatLocalDate(request.due_on) : "—"}
+                    {overdue && <span className="badge-overdue">Overdue</span>}
+                  </span>
                 </td>
               </tr>
             ))}
