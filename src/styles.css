@@ -57,3 +57,29 @@ label.inline { display: inline-flex; gap: 6px; align-items: center; }
 .dot-live { background: #16a34a; }
 .dot-catching-up { background: #d97706; }
 .dot-retrying { background: var(--danger); }
+
+/* Robustness: states, focus, small screens */
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.toolbar p { margin: 8px 0; }
+progress.loading { width: 100%; height: 6px; }
+.error, .empty { margin: 12px 0; padding: 12px; border-radius: 4px; }
+.error p, .empty p { margin: 0 0 8px; }
+.empty { border: 1px dashed #9aa5b1; text-align: center; }
+
+@media (max-width: 640px) {
+  body { padding: 12px; }
+  .filters { flex-direction: column; align-items: stretch; }
+  .filters input, .filters select { width: 100%; min-width: 0; }
+  .filters label { min-width: 0; }
+  .table-wrap { overflow-x: visible; }
+  /* Each request becomes a card: header cells hidden, every cell labelled from data-label. */
+  table, tbody, tr, td { display: block; width: 100%; }
+  thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  tr { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 10px; padding: 6px 0; }
+  td { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 8px; border: 0; padding: 4px 10px; overflow-wrap: anywhere; }
+  td > button.link { justify-self: start; }
+  td::before { content: attr(data-label); font-weight: 600; color: var(--muted); }
+  .detail { width: 100vw; padding: 12px; }
+  .timeline li { grid-template-columns: 1fr; gap: 2px; }
+}

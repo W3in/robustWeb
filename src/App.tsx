@@ -27,8 +27,9 @@ export default function App() {
 }
 
 function Board() {
-  const [filters, setFilters] = useUrlFilters();
+  const [filters, setFilters, resetFilters] = useUrlFilters();
   const data = useBoardData(filters.from, filters.to);
+  useRetryWhenOnline(data.state === "error", data.reload);
   const [selectedId, setSelectedId] = useSelectedRequest();
   const [detailRefresh, setDetailRefresh] = useState(0);
   const now = useMinuteClock();
@@ -80,14 +81,43 @@ function Board() {
 
       <FiltersBar filters={filters} sites={data.sites} onChange={setFilters} />
 
-      <p className="muted" role="status">
-        {data.state === "loading"
-          ? `Loading requests${data.progress ? ` (page ${data.progress.loaded} of ${data.progress.total})` : ""}…`
-          : `${rows.length} request${rows.length === 1 ? "" : "s"}`}
-      </p>
+      <div className="toolbar">
+        <p className="muted" role="status">
+          {data.state === "loading" && "Loading requests…"}
+          {data.state === "ready" && `${rows.length} request${rows.length === 1 ? "" : "s"}`}
+        </p>
+      </div>
 
-      {data.state === "error" && <p role="alert">Could not load requests: {data.error}</p>}
-      {data.state === "ready" && <RequestsTable key={JSON.stringify(filters)} rows={rows} staff={staffById} sort={filters.sort} onOpen={setSelectedId} />}
+      {data.state === "loading" && (
+        <progress
+          className="loading"
+          aria-label="Loading requests"
+          max={data.progress?.total ?? 1}
+          value={data.progress ? data.progress.loaded : undefined}
+        />
+      )}
+
+      {data.state === "error" && (
+        <div role="alert" className="error">
+          <p>Could not load requests. {data.error}.</p>
+          <button type="button" onClick={data.reload}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {data.state === "ready" && rows.length === 0 && (
+        <div className="empty">
+          <p>No requests match these filters.</p>
+          <button type="button" onClick={resetFilters}>
+            Reset filters
+          </button>
+        </div>
+      )}
+
+      {data.state === "ready" && rows.length > 0 && (
+        <RequestsTable key={JSON.stringify(filters)} rows={rows} staff={staffById} sort={filters.sort} onOpen={setSelectedId} />
+      )}
 
       {selectedId !== null && (
         <RequestDetail
@@ -113,6 +143,15 @@ function useMinuteClock(): Date {
     return () => clearInterval(timer);
   }, []);
   return now;
+}
+
+/** When the connection comes back after a failed load, try again without waiting for a click. */
+function useRetryWhenOnline(failed: boolean, retry: () => void) {
+  useEffect(() => {
+    if (!failed) return;
+    window.addEventListener("online", retry);
+    return () => window.removeEventListener("online", retry);
+  }, [failed, retry]);
 }
 
 function latest(a: Date | null, b: Date | null): Date | null {
