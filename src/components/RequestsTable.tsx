@@ -10,9 +10,10 @@ interface Props {
   rows: BoardRow[];
   staff: StaffDirectory;
   sort: SortKey;
+  onOpen: (id: number) => void;
 }
 
-export function RequestsTable({ rows, staff, sort }: Props) {
+export function RequestsTable({ rows, staff, sort, onOpen }: Props) {
   const [limit, setLimit] = useState(PAGE_SIZE);
   const visible = rows.slice(0, limit);
 
@@ -41,8 +42,13 @@ export function RequestsTable({ rows, staff, sort }: Props) {
           </thead>
           <tbody>
             {visible.map(({ request, site, timeZone, overdue }) => (
-              <tr key={request.id} className={overdue ? "overdue" : undefined}>
-                <td data-label="Ref">{request.ref}</td>
+              <tr key={request.id} className={overdue ? "overdue" : undefined} onClick={() => onOpen(request.id)}>
+                <td data-label="Ref">
+                  {/* The button is the keyboard/screen-reader way in; clicking anywhere on the row also opens it. */}
+                  <button type="button" className="link" aria-label={`Open ${request.ref}: ${request.title}`} onClick={(e) => (e.stopPropagation(), onOpen(request.id))}>
+                    {request.ref}
+                  </button>
+                </td>
                 <td data-label="Site">{site?.name ?? `Site #${request.site_id}`}</td>
                 <td data-label="Title">{request.title}</td>
                 <td data-label="Priority">{request.priority ?? "—"}</td>
