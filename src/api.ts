@@ -86,6 +86,16 @@ export const getRequest = (id: number, signal?: AbortSignal) => get<HelpdeskRequ
 export const listEvents = (id: number, page = 1, signal?: AbortSignal) =>
   get<Page<RequestEvent>>(`/v1/requests/${id}/events`, { page }, signal);
 
+/** Every event of a request: follows has_more until the last page. */
+export async function listAllEvents(id: number, signal?: AbortSignal): Promise<RequestEvent[]> {
+  const events: RequestEvent[] = [];
+  for (let page = 1; ; page++) {
+    const result = await listEvents(id, page, signal);
+    events.push(...result.data);
+    if (!result.has_more || result.data.length === 0 || page >= 100) return events;
+  }
+}
+
 export const listSites = (signal?: AbortSignal) => get<{ data: Site[] }>("/v1/sites", {}, signal);
 
 export const listStaff = (signal?: AbortSignal) => get<{ data: Staff[] }>("/v1/staff", {}, signal);
