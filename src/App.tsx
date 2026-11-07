@@ -1,61 +1,49 @@
-import { useEffect, useState } from "react";
-import { ApiError, configured, listRequests } from "./api";
-import { daysAgo, toApiDate } from "./lib/dates";
-import type { HelpdeskRequest } from "./types";
+import { useMemo } from "react";
+import { configured } from "./api";
+import { FiltersBar } from "./components/FiltersBar";
+import { RequestsTable } from "./components/RequestsTable";
+import { useBoardData } from "./hooks/useBoardData";
+import { useUrlFilters } from "./hooks/useUrlFilters";
+import { selectRows } from "./lib/board";
+import { buildStaffDirectory } from "./lib/rules";
 
-// A first slice of level 1: one page of requests for the last 30 days.
-// Everything below is yours to restructure. Check the rules in the brief before trusting these rows.
 export default function App() {
-  const [rows, setRows] = useState<HelpdeskRequest[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const from = daysAgo(30);
-  const to = daysAgo(0);
-
-  useEffect(() => {
-    if (!configured()) return;
-    setLoading(true);
-    listRequests({ created_from: toApiDate(from), created_to: toApiDate(to), per_page: 100 })
-      .then((page) => setRows(page.data))
-      .catch((e: unknown) => setError(e instanceof ApiError ? `${e.status}: ${e.message}` : String(e)))
-      .finally(() => setLoading(false));
-  }, [from, to]);
-
   if (!configured()) {
-    return <p>Save <code>HELPDESK_URL</code> and <code>HELPDESK_TOKEN</code> in <code>.env</code>, then restart <code>npm run dev</code>.</p>;
+    return (
+      <main>
+        <p role="alert">
+          Save <code>HELPDESK_URL</code> and <code>HELPDESK_TOKEN</code> in <code>.env</code>, then restart <code>npm run dev</code>.
+        </p>
+      </main>
+    );
   }
+  return <Board />;
+}
+
+function Board() {
+  const [filters, setFilters] = useUrlFilters();
+  const data = useBoardData(filters.from, filters.to);
+
+  const siteById = useMemo(() => new Map(data.sites.map((site) => [site.id, site])), [data.sites]);
+  const staffById = useMemo(() => buildStaffDirectory(data.staff), [data.staff]);
+  const rows = useMemo(() => selectRows(data.requests.values(), siteById, filters), [data.requests, siteById, filters]);
 
   return (
     <main>
-      <h1>Requests board</h1>
-      <p className="muted">
-        {from} to {to}. {loading ? "Loading…" : `${rows.length} rows (first page only).`}
+      <header className="page-header">
+        <h1>Requests board</h1>
+      </header>
+
+      <FiltersBar filters={filters} sites={data.sites} onChange={setFilters} />
+
+      <p className="muted" role="status">
+        {data.state === "loading"
+          ? `Loading requests${data.progress ? ` (page ${data.progress.loaded} of ${data.progress.total})` : ""}…`
+          : `${rows.length} request${rows.length === 1 ? "" : "s"}`}
       </p>
-      {error && <p role="alert">Could not load requests: {error}</p>}
-      <table>
-        <thead>
-          <tr>
-            <th>Ref</th>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th>Assignee</th>
-            <th>Due</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td>{r.ref}</td>
-              <td>{r.title}</td>
-              <td>{r.status}</td>
-              <td>{r.priority ?? "—"}</td>
-              <td>{r.assignee?.name ?? "—"}</td>
-              <td>{r.due_on ?? "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      {data.state === "error" && <p role="alert">Could not load requests: {data.error}</p>}
+      {data.state === "ready" && <RequestsTable key={JSON.stringify(filters)} rows={rows} staff={staffById} sort={filters.sort} />}
     </main>
   );
 }

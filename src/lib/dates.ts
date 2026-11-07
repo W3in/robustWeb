@@ -40,3 +40,35 @@ export function daysAgo(days: number, today = new Date()): string {
 export function browserToday(now = new Date()): string {
   return localDate(now, Intl.DateTimeFormat().resolvedOptions().timeZone);
 }
+
+const instantFormats = new Map<string, Intl.DateTimeFormat>();
+
+/**
+ * "6 Oct 2026, 10:15 GMT+8": an instant shown in a site's timezone, with the zone named.
+ * Fields are listed individually because dateStyle/timeStyle can't be combined with timeZoneName.
+ */
+export function formatInstant(instant: Date, timeZone: string): string {
+  let format = instantFormats.get(timeZone);
+  if (!format) {
+    format = new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZoneName: "short",
+    });
+    instantFormats.set(timeZone, format);
+  }
+  return format.format(instant);
+}
+
+/** "2026-10-07" -> "7 Oct 2026" without any timezone shifting (it's already a site-local date). */
+export function formatLocalDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(
+    new Date(Date.UTC(year, month - 1, day)),
+  );
+}
